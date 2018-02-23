@@ -31,9 +31,11 @@ String bulletItems(Iterable<String> items) => items.map((l) => '  * $l').join('\
 
 Iterable<File> listDartFilesIn(String dirPath) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return const [];
-  return new Directory(dirPath)
+  final allFiles = new Directory(dirPath)
       .listSync(recursive: true)
-      .where((entity) => entity is File && !entity.path.contains('/packages/') && entity.path.endsWith('.dart'));
+      // TODO use .whereType in Dart2
+      .where((entity) => entity is File) as Iterable<File>;
+  return allFiles.where((entity) => !entity.path.contains('/packages/') && entity.path.endsWith('.dart'));
 }
 
 void logDependencyInfractions(String infraction, Iterable<String> dependencies) {

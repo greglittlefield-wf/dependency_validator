@@ -25,14 +25,14 @@ final ArgParser argParser = new ArgParser()
 void main(List<String> args) {
   final argResults = argParser.parse(args);
 
-  if (argResults.wasParsed('verbose') && argResults['verbose']) {
+  if (argResults.wasParsed('verbose') && (argResults['verbose'] as bool)) {
     Logger.root.level = Level.ALL;
   }
 
   List<String> ignoredPackages;
 
   if (argResults.wasParsed('ignore')) {
-    ignoredPackages = argResults['ignore'];
+    ignoredPackages = (argResults['ignore'] as List<String>);
   } else {
     ignoredPackages = const <String>[];
   }

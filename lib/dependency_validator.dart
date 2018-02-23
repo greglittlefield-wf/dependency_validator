@@ -21,33 +21,36 @@ import './src/utils.dart';
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 void run({List<String> ignoredPackages = const []}) {
   // Read and parse the pubspec.yaml in the current working directory.
-  final YamlMap pubspecYaml = loadYaml(new File('pubspec.yaml').readAsStringSync());
+  final YamlMap pubspecYaml = loadYaml(new File('pubspec.yaml').readAsStringSync()) as YamlMap;
 
   // Extract the package name.
-  final packageName = pubspecYaml[nameKey];
+  final packageName = getString(pubspecYaml, nameKey);
 
   logger.info('Validating dependencies for $packageName');
 
   // Extract the package names from the `dependencies` section.
   final deps = pubspecYaml.containsKey(dependenciesKey)
-      ? new Set<String>.from(pubspecYaml[dependenciesKey].keys)
+      ? getMap(pubspecYaml, dependenciesKey).keys.map(toString).toSet()
       : new Set<String>();
   logger.fine('dependencies:\n${bulletItems(deps)}\n');
 
   // Extract the package names from the `dev_dependencies` section.
   final devDeps = pubspecYaml.containsKey(devDependenciesKey)
-      ? new Set<String>.from(pubspecYaml[devDependenciesKey].keys)
+      ? getMap(pubspecYaml, devDependenciesKey).keys.map(toString).toSet()
       : new Set<String>();
   logger.fine('dev_dependencies:\n'
       '${bulletItems(devDeps)}\n');
 
   // Extract the package names from the `transformers` section.
-  final Iterable transformerEntries = pubspecYaml[transformersKey];
+  final Iterable transformerEntries = getList(pubspecYaml, transformersKey);
   final packagesUsedViaTransformers = pubspecYaml.containsKey(transformersKey)
-      ? new Set<String>.from(transformerEntries.map<String>((value) {
-          if (value is YamlMap) return value.keys.first;
-          return value;
-        }).map((value) => value.replaceFirst(new RegExp(r'\/.*'), '')))
+      ? transformerEntries
+          .map((dynamic value) {
+            if (value is YamlMap) return value.keys.first.toString();
+            return value.toString();
+          })
+          .map((value) => value.replaceFirst(new RegExp(r'\/.*'), ''))
+          .toSet()
       : new Set<String>();
   logger.fine('transformers:\n'
       '${bulletItems(packagesUsedViaTransformers)}\n');
@@ -200,3 +203,9 @@ void run({List<String> ignoredPackages = const []}) {
     logger.info('No infractions found, $packageName is good to go!');
   }
 }
+
+// Helpers to clean up access to dynamically-typed yaml data
+String toString(Object o) => o.toString();
+YamlMap getMap(YamlMap map, dynamic key) => map[key] as YamlMap;
+YamlList getList(YamlMap map, dynamic key) => map[key] as YamlList;
+String getString(YamlMap map, dynamic key) => map[key] as String;
